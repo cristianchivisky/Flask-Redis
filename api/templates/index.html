@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>The Mandalorian: Alquiler de capítulos</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container-fluid mt-2">
+        <img src="/static/63dbf2edaa541.jpg" class="img-fluid img-thumbnail" alt="Img Mandalorian">
+        <h2>The Mandalorian: Alquiler de capítulos</h2>
+        <table class="table table-striped table-hover text-sm-smaller">
+            <thead>
+                <tr>
+                    <th>Nº Capítulo</th>
+                    <th>Título</th>
+                    <th>Temporada</th>
+                    <th>Disponibilidad</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for capitulo in lista_capitulos %}
+                <tr>
+                    <td>{{ capitulo.numero }}</td>
+                    <td>{{ capitulo.titulo }}</td>
+                    <td>{{ capitulo.temporada }}</td>
+                    <td>
+                        {% if capitulo.disponibilidad == "Disponible" %}
+                        <span class="text-secondary">{{ capitulo.disponibilidad }}</span>
+                        {% elif capitulo.disponibilidad == "Reservado" %}
+                        <span class="text-warning">{{ capitulo.disponibilidad }}</span>
+                        {% else %}
+                        <span class="text-danger">{{ capitulo.disponibilidad }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if capitulo.disponibilidad == "Disponible" %}
+                        <a href="/reservar_capitulo?numero={{ capitulo.numero }}&titulo={{ capitulo.titulo }}" class="text-primary">Alquilar</a>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {%extends 'bootstrap/base.html'%}
+</body>
+</html>

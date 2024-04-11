@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+
+  db-redis:
+    container_name: redis_db_python
+    image: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  web-api-flask:
+    container_name: python-redis
+    build: .
+    
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./api:/api
+    command: sh -c "python parte_3.py"
+    depends_on:
+      - db-redis
+
+volumes:
+  redis_data:

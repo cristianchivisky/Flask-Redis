@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>The Mandalorian: Alquiler de capítulo</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container-fluid mt-5">
+        {% if capitulo == {} %}
+        <div class="alert alert-secondary text-center" role="alert">
+            <h1 class="alert-heading">No disponible en este momento</h1>
+            <h3>El capítulo ha sido reservado o alquilado, intente nuevamente más tarde.</h3>
+            <hr>
+            <p class="mb-0">Por dudas o consultas contáctanos a nuestro <a href="/" title="Enviar un correo electrónico">mail</a>.</p>
+        </div>
+        {%else%}
+        <div class="card text-center">
+            <div class="card-header">
+                <h1>The Mandalorian: Alquiler de capítulo {{ capitulo.numero }}</h1>
+            </div>
+            <div class="card-body">
+                <h3 class="card-title">Título: {{ capitulo.titulo }}</h3>
+                <h3 class="card-title">Temporada: {{ capitulo.temporada }}</h3>
+                <h4>Precio: ${{ capitulo.precio }}</h4>
+                <br>
+                <a href="/confirmar_pago?numero={{ capitulo.numero }}&precio={{capitulo.precio}}" class="btn btn-primary">Confirmar pago</a>
+                <a href="/" class="btn btn-secondary">Volver atrás</a>
+            </div>
+            <div class="card-footer text-body-secondary">
+
+            </div>
+        </div>
+        {%endif%}
+    </div>
+    {%extends 'bootstrap/base.html'%}
+</body>
+</html>

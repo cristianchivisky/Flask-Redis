@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Pago {{res}}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container-fluid mt-5">
+        {% if res == "Confirmado" %}
+            <div class="alert alert-secondary text-center" role="alert">
+                <h1 class="alert-heading">Pago confirmado</h1>
+                <h3>¡Gracias por tu compra!</h3>
+                <hr>
+                <p class="mb-0">Puedes ver el capítulo ahora en <a href="/" title="Ir a la página principal">este enlace</a>.</p>
+            </div>
+        {% else %}
+            <div class="alert alert-danger text-center" role="alert">
+                <h1 class="alert-heading">Ocurrió un error</h1>
+                <h3>No se pudo confirmar el pago</h3>
+                <hr>
+                <p class="mb-0">Por dudas o consultas contáctanos a nuestro <a href="/" title="Enviar un correo electrónico">mail</a>.</p>
+            </div>
+        {% endif %}
+    </div>
+    {% extends 'bootstrap/base.html' %}
+</body>
+</html>
