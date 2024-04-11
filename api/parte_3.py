@@ -1,35 +1,14 @@
 from flask import Flask,render_template, request, jsonify
 from redis import Redis, ConnectionError
 from flask_bootstrap import Bootstrap
+from capitulos import array_capitulos
+
 
 app = Flask(__name__)
 bootstrap = Bootstrap(app)
-array_capitulos = [{"numero": 1, "titulo": "El Mandaloriano", "temporada": 1, "precio": 5.99},
-    {"numero": 2, "titulo": "El Niño", "temporada": 1, "precio": 5.99},
-    {"numero": 3, "titulo": "El Pecado", "temporada": 1, "precio": 5.99},
-    { "numero": 4, "titulo": "Santuario", "temporada": 1, "precio": 5.99},
-    {"numero": 5, "titulo": "El Pistolero", "temporada": 1, "precio": 5.99},
-    {"numero": 6, "titulo": "El Prisionero", "temporada": 1, "precio": 5.99},
-    {"numero": 7, "titulo": "El Ajuste de Cuentas", "temporada": 1, "precio": 5.99},
-    {"numero": 8, "titulo": "Redención", "temporada": 1, "precio": 5.99},
-    {"numero": 9, "titulo": "El Mariscal", "temporada": 2, "precio": 5.99},
-    {"numero": 10, "titulo": "La Pasajera", "temporada": 2, "precio": 5.99},
-    {"numero": 11, "titulo": "La Heredera", "temporada": 2, "precio": 5.99},
-    {"numero": 12, "titulo": "El Asedio", "temporada": 2, "precio": 5.99},
-    {"numero": 13, "titulo": "La Jedi", "temporada": 2, "precio": 5.99},
-    {"numero": 14, "titulo": "La Tragedia", "temporada": 2, "precio": 5.99},
-    {"numero": 15, "titulo": "El Creyente", "temporada": 2, "precio": 5.99},
-    {"numero": 16, "titulo": "El Rescate", "temporada": 2, "precio": 5.99},
-    {"numero": 17, "titulo": "El Apóstata", "temporada": 3, "precio": 5.99},
-    {"numero": 18, "titulo": "Las Minas de Mandalore","temporada": 3, "precio": 5.99},
-    {"numero": 19, "titulo": "El Converso", "temporada": 3, "precio": 5.99},
-    {"numero": 20, "titulo": "El Huérfano", "temporada": 3, "precio": 5.99},
-    {"numero": 21, "titulo": "El Pirata", "temporada": 3, "precio": 5.99},
-    {"numero": 22, "titulo": "Pistoleros a Sueldo", "temporada": 3, "precio": 5.99},
-    {"numero": 23, "titulo": "Los Espías", "temporada": 3, "precio": 5.99},
-    {"numero": 24, "titulo": "El Retorno", "temporada": 3, "precio": 5.99}]
 
 def connect_db():
+    """Función para conectar a la base de datos Redis"""
     try:
         conexion = Redis(host='db-redis', port=6379, decode_responses=True)
         conexion.ping()
@@ -40,6 +19,7 @@ def connect_db():
         return None
 
 def cargar_capitulos():
+    """Función para cargar los capítulos en la base de datos"""
     con = connect_db()
     if con.dbsize() < 1:
         for cap in array_capitulos:
@@ -48,15 +28,15 @@ def cargar_capitulos():
             con.hset(f'capitulo{cap["numero"]}', 'precio', cap["precio"])
             con.lpush('capitulos', cap["numero"])
 
-cargar_capitulos()
+cargar_capitulos() # Llama a la funcion para cargar los capitulos
 
-@app.route('/')
+@app.route('/') # Ruta principal de la aplicación
 def index():
     con = connect_db()
-    capitulos = con.sort("capitulos")
+    capitulos = con.sort("capitulos") # Obtiene los numeros de los capitulos ordenados
     lista_capitulos = []
     for capitulo in capitulos:
-        if con.exists(capitulo) > 0:
+        if con.exists(capitulo) > 0: # Verifica si existe esa clave en la base de datos
             disponibilidad = con.get(capitulo)
         else:
             disponibilidad = "Disponible"
@@ -71,12 +51,12 @@ def index():
 
 @app.route('/reservar_capitulo', methods=['GET'])
 def reservar_capitulo():
-    numero_capitulo = request.args.get("numero")
+    numero_capitulo = request.args.get("numero") # Obtiene el numero de capitulo de la url
     capitulo={}
     if request.method == 'GET':
         con = connect_db()
-        if con.get(numero_capitulo) not in ["Reservado", "Alquilado"]:
-            con.setex(numero_capitulo, 240, "Reservado")
+        if con.get(numero_capitulo) not in ["Reservado", "Alquilado"]: # Verifica si el capitulo esta disponible para reservar
+            con.setex(numero_capitulo, 240, "Reservado") # Reserva el capitulo por 240 segundos (4 minutos)
             capitulo['numero'] = numero_capitulo
             capitulo['titulo'] = request.args.get("titulo")
             capitulo['temporada'] = con.hget(f'capitulo{numero_capitulo}', 'temporada')
@@ -90,11 +70,12 @@ def reservar_capitulo():
 def confirmar_pago():
     if request.method == 'GET':
         con = connect_db()
+        # Obtiene el numero de capitulo y el precio de la solicitud
         numero_capitulo = request.args.get("numero")
         precio = request.args.get("precio")
-        if con.get(numero_capitulo) == "Reservado":
-            con.setex(numero_capitulo, 86400, "Alquilado")
-            if con.get(numero_capitulo) == "Alquilado":
+        if con.get(numero_capitulo) == "Reservado": # Verifica si el capitulo esta reservado
+            con.setex(numero_capitulo, 86400, "Alquilado") # Alquila el capítulo por 86400 segundos (1 día)
+            if con.get(numero_capitulo) == "Alquilado": # Verificar si el capítulo se alquiló con éxito
                 res = "Confirmado"
         else:
             res = "No confirmado"
