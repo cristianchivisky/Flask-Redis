@@ -3,6 +3,10 @@
 Este proyecto implementa una aplicación web para alquilar capítulos de la serie "The Mandalorian". 
 Utilizando Flask como framework para el desarrollo de la API y Redis como base de datos para el almacenamiento de información sobre los capítulos.
 
+## Requisitos
+
+- Docker
+
 ## Instrucciones de Uso
 
 1. Clona este repositorio en tu máquina local.
