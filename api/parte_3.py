@@ -30,23 +30,28 @@ def cargar_capitulos():
 
 cargar_capitulos() # Llama a la funcion para cargar los capitulos
 
+def obtener_info_capitulo(con, numero):
+    if con.exists(numero) > 0: # Verifica si existe esa clave en la base de datos
+            disponibilidad = con.get(numero)
+    else:
+        disponibilidad = "Disponible"
+    capitulo_info = {
+        "numero": numero,
+        "titulo": con.hget(f'capitulo{numero}', "titulo"),
+        "temporada": con.hget(f'capitulo{numero}', "temporada"),
+        "precio": con.hget(f'capitulo{numero}', "precio"),
+        "disponibilidad": disponibilidad
+    }
+    return capitulo_info
+
 @app.route('/') # Ruta principal de la aplicación
 def index():
     con = connect_db()
     capitulos = con.sort("capitulos") # Obtiene los numeros de los capitulos ordenados
     lista_capitulos = []
     for capitulo in capitulos:
-        if con.exists(capitulo) > 0: # Verifica si existe esa clave en la base de datos
-            disponibilidad = con.get(capitulo)
-        else:
-            disponibilidad = "Disponible"
-        lista_capitulos.append({
-            "numero": capitulo,
-            "titulo": con.hget(f'capitulo{capitulo}', "titulo"),
-            "temporada": con.hget(f'capitulo{capitulo}', "temporada"),
-            "precio": con.hget(f'capitulo{capitulo}', "precio"),
-            "disponibilidad": disponibilidad
-        })
+        capitulo_info = obtener_info_capitulo(con, capitulo)
+        lista_capitulos.append(capitulo_info)
     return render_template('index.html', lista_capitulos=lista_capitulos)
 
 @app.route('/reservar_capitulo', methods=['GET'])
@@ -57,12 +62,7 @@ def reservar_capitulo():
         con = connect_db()
         if con.get(numero_capitulo) not in ["Reservado", "Alquilado"]: # Verifica si el capitulo esta disponible para reservar
             con.setex(numero_capitulo, 240, "Reservado") # Reserva el capitulo por 240 segundos (4 minutos)
-            capitulo['numero'] = numero_capitulo
-            capitulo['titulo'] = request.args.get("titulo")
-            capitulo['temporada'] = con.hget(f'capitulo{numero_capitulo}', 'temporada')
-            capitulo['disponibilidad'] = con.get(numero_capitulo)
-            capitulo['precio'] = con.hget(f'capitulo{numero_capitulo}', 'precio')
-        print(capitulo)
+            capitulo = obtener_info_capitulo(con, numero_capitulo)
     return render_template('info_capitulo.html', capitulo=capitulo)
 
 
