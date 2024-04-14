@@ -1,4 +1,4 @@
-from flask import Flask,render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, json
 from redis import Redis, ConnectionError
 from flask_bootstrap import Bootstrap
 from capitulos import array_capitulos
@@ -21,58 +21,47 @@ def connect_db():
 def cargar_capitulos():
     """Función para cargar los capítulos en la base de datos"""
     con = connect_db()
-    if con.dbsize() < 1:
-        for cap in array_capitulos:
-            con.hset(f'capitulo{cap["numero"]}', 'titulo', cap["titulo"])
-            con.hset(f'capitulo{cap["numero"]}', 'temporada', cap["temporada"])
-            con.hset(f'capitulo{cap["numero"]}', 'precio', cap["precio"])
-            con.lpush('capitulos', cap["numero"])
+    if con and con.dbsize() == 0:
+        for capitulo in array_capitulos:
+            con.lpush('capitulos', json.dumps(capitulo))
 
-cargar_capitulos() # Llama a la funcion para cargar los capitulos
-
-def obtener_info_capitulo(con, numero):
-    if con.exists(numero) > 0: # Verifica si existe esa clave en la base de datos
-            disponibilidad = con.get(numero)
-    else:
-        disponibilidad = "Disponible"
-    capitulo_info = {
-        "numero": numero,
-        "titulo": con.hget(f'capitulo{numero}', "titulo"),
-        "temporada": con.hget(f'capitulo{numero}', "temporada"),
-        "precio": con.hget(f'capitulo{numero}', "precio"),
-        "disponibilidad": disponibilidad
-    }
-    return capitulo_info
+cargar_capitulos()
 
 @app.route('/') # Ruta principal de la aplicación
 def index():
     con = connect_db()
-    capitulos = con.sort("capitulos") # Obtiene los numeros de los capitulos ordenados
+    capitulos = con.lrange('capitulos', 0, -1)
     lista_capitulos = []
     for capitulo in capitulos:
-        capitulo_info = obtener_info_capitulo(con, capitulo)
+        capitulo_info = json.loads(capitulo)
+        numero=capitulo_info["numero"]
+        disponibilidad = con.get(numero) if con.exists(numero) else "Disponible"
+        capitulo_info["disponibilidad"] = disponibilidad
         lista_capitulos.append(capitulo_info)
     return render_template('index.html', lista_capitulos=lista_capitulos)
 
 @app.route('/reservar_capitulo', methods=['GET'])
 def reservar_capitulo():
-    numero_capitulo = request.args.get("numero") # Obtiene el numero de capitulo de la url
-    capitulo={}
+    numero_capitulo = request.args.get("numero")  # Obtiene el número de capítulo de la URL
+    capitulo = {}
     if request.method == 'GET':
         con = connect_db()
-        if con.get(numero_capitulo) not in ["Reservado", "Alquilado"]: # Verifica si el capitulo esta disponible para reservar
-            con.setex(numero_capitulo, 240, "Reservado") # Reserva el capitulo por 240 segundos (4 minutos)
-            capitulo = obtener_info_capitulo(con, numero_capitulo)
+        disponibilidad = con.get(numero_capitulo) if con.exists(numero_capitulo) else "Disponible"
+        if disponibilidad not in ["Reservado", "Alquilado"]:
+            con.setex(numero_capitulo, 240, "Reservado")  # Reserva el capítulo por 240 segundos (4 minutos)
+            capitulos = con.lrange("capitulos", 0, -1)
+            for cap in capitulos:
+                capitulo_info = json.loads(cap)
+                if capitulo_info["numero"] == int(numero_capitulo):
+                    capitulo = capitulo_info
+                    break  
     return render_template('info_capitulo.html', capitulo=capitulo)
-
 
 @app.route('/confirmar_pago', methods=['GET'])
 def confirmar_pago():
     if request.method == 'GET':
         con = connect_db()
-        # Obtiene el numero de capitulo y el precio de la solicitud
         numero_capitulo = request.args.get("numero")
-        precio = request.args.get("precio")
         if con.get(numero_capitulo) == "Reservado": # Verifica si el capitulo esta reservado
             con.setex(numero_capitulo, 86400, "Alquilado") # Alquila el capítulo por 86400 segundos (1 día)
             if con.get(numero_capitulo) == "Alquilado": # Verificar si el capítulo se alquiló con éxito

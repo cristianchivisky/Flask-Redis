@@ -50,11 +50,12 @@ def quitar_personaje():
         if con:
             episode = request.args.get("episode")
             character_name = request.args.get("name")
-            if episode and character_name:
+            lista = get_list(con, episode)
+            if episode and character_name in lista:
                 con.lrem(episode, 0, character_name)
                 return jsonify({"message": "Personaje eliminado correctamente"})
             else:
-                return jsonify({"error": "Se requieren el número de episodio y el nombre del personaje"}), 400
+                return jsonify({"error": "Se requieren el número de episodio y el nombre del personaje correspondiente"}), 400
     return jsonify({"error": "No se pudo conectar a la base de datos Redis"}), 500
 
 @app.route('/listar_personajes', methods=['GET'])
