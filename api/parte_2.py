@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from redis import Redis, ConnectionError
 
 app = Flask(__name__)
@@ -71,6 +71,10 @@ def listar_personajes():
             else:
                 return jsonify({"error": "Se requiere el número de episodio"}), 400
     return jsonify(lista)
+
+@app.errorhandler(404)
+def page_not_found(error):
+    return render_template('error.html', error="¡Ooops! La página que buscas no está en el servidor!"), 404
 
 if __name__ == '__main__':
     app.run(host='web-api-flask', port='5000', debug=True)
